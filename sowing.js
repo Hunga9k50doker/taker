@@ -17,6 +17,7 @@ const { Wallet, ethers } = require("ethers");
 const { solveCaptcha } = require("./utils/captcha.js");
 const { activateMining } = require("./utils/contract.js");
 const answers = require("./answers.json");
+const { claimRewardMining } = require("./utils/sowingContract.js");
 
 class ClientAPI {
   constructor(itemData, accountIndex, proxy, baseURL) {
@@ -193,8 +194,13 @@ class ClientAPI {
           ...(proxyAgent ? { httpsAgent: proxyAgent, httpAgent: proxyAgent } : {}),
           ...(method.toLowerCase() != "get" ? { data } : {}),
         });
-        if (response?.data?.data?.code >= 400 || response?.data?.code >= 400) {
-          return { success: false, data: response.data, status: response?.data?.data?.code >= 400 || response?.data?.code >= 400, error: response.data?.msg || "unknow" };
+
+        if (response?.data?.code == 401) {
+          this.token = await this.getValidToken(true);
+          return await this.makeRequest(url, method, data, options);
+        }
+        if (response?.data?.code && response?.data?.code != 200) {
+          return { success: false, data: response.data, status: response?.data?.code, error: response.data || "unknow" };
         }
         if (response?.data?.result) return { status: response.status, success: true, data: response.data.result, error: null };
         return { success: true, data: response.data, status: response.status, error: null };
@@ -256,7 +262,19 @@ class ClientAPI {
   }
 
   async startMine() {
-    return this.makeRequest(`${this.baseURL}/task/signIn?status=true`, "get");
+    this.log(`Solving captcha...`);
+    const token = await solveCaptcha({
+      websiteURL: "https://sowing.taker.xyz/",
+      websiteKey: "0x4AAAAAABNqF8H4KF9TDs2O",
+    });
+    if (!token) {
+      return { success: false };
+    }
+    return this.makeRequest(`${this.baseURL}/task/signIn?status=true`, "get", null, {
+      extraHeaders: {
+        "cf-turnstile-token": token,
+      },
+    });
   }
 
   async getMinerStatus() {
@@ -291,15 +309,19 @@ class ClientAPI {
     if (currentTime >= nextTimestamp || start || userData.firstSign) {
       if (userData.firstSign) {
         this.log(`First sign in, waiting 50s...`, "info");
-        // await sleep(50);
+        await sleep(50);
+      } else {
+        // const isMiningSuccess = await claimRewardMining(this.itemData.privateKey);
+        // console.log(isMiningSuccess);
       }
       this.log(`Starting mining...`, "info");
       const result = await this.startMine();
-      // const isMiningSuccess = await activateMining(this.itemData.privateKey);
+
       if (!result.success) {
-        this.log(`Mining failed: ${JSON.stringify(result.error || {})}`, "error");
+        this.log(`Mining failed: ${JSON.stringify(result || {})}`, "error");
+      } else {
+        this.log(`Mining started successfully!`, "success");
       }
-      this.log(`Mining started successfully!`, "success");
       return;
     } else {
       const remainingTime = nextTimestamp - currentTime;

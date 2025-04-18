@@ -12,8 +12,8 @@ const solve2Captcha = async (params) => {
         clientKey: config.API_KEY_2CAPTCHA,
         task: {
           type: "TurnstileTaskProxyless",
-          websiteURL: config.CAPTCHA_URL,
-          websiteKey: config.WEBSITE_KEY,
+          websiteURL: params.websiteURL,
+          websiteKey: params.websiteKey,
         },
       },
       {
@@ -61,7 +61,7 @@ const solve2Captcha = async (params) => {
   }
 };
 
-const solveAntiCaptcha = async () => {
+const solveAntiCaptcha = async (params) => {
   let retries = 5;
   try {
     // Step 1: Create a CAPTCHA task
@@ -71,8 +71,8 @@ const solveAntiCaptcha = async () => {
         clientKey: config.API_KEY_ANTI_CAPTCHA,
         task: {
           type: "TurnstileTaskProxyless",
-          websiteURL: config.CAPTCHA_URL,
-          websiteKey: config.WEBSITE_KEY,
+          websiteURL: params.websiteURL,
+          websiteKey: params.websiteKey,
         },
       },
       {
@@ -122,7 +122,7 @@ const solveAntiCaptcha = async () => {
   }
 };
 
-const solveMonsterCaptcha = async () => {
+const solveMonsterCaptcha = async (params) => {
   let retries = 5;
   try {
     // Step 1: Create a CAPTCHA task
@@ -132,8 +132,8 @@ const solveMonsterCaptcha = async () => {
         clientKey: config.API_KEY_CAPMONSTER,
         task: {
           type: "TurnstileTaskProxyless",
-          websiteURL: config.CAPTCHA_URL,
-          websiteKey: config.WEBSITE_KEY,
+          websiteURL: params.websiteURL,
+          websiteKey: params.websiteKey,
         },
       },
       {
@@ -183,7 +183,12 @@ const solveMonsterCaptcha = async () => {
   }
 };
 
-async function solveCaptcha(params = {}) {
+async function solveCaptcha(
+  params = {
+    websiteURL: config.CAPTCHA_URL,
+    websiteKey: config.WEBSITE_KEY,
+  }
+) {
   if (config.TYPE_CAPTCHA === "2captcha") {
     return await solve2Captcha(params);
   } else if (config.TYPE_CAPTCHA === "anticaptcha") {
