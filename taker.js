@@ -197,6 +197,10 @@ class ClientAPI {
           ...(proxyAgent ? { httpsAgent: proxyAgent, httpAgent: proxyAgent } : {}),
           ...(method.toLowerCase() != "get" ? { data } : {}),
         });
+        if ((response?.data?.data?.code && response?.data?.data?.code == 401) || (response?.data?.code && response?.data?.code == 401)) {
+          this.token = await this.getValidToken(true);
+          return await this.makeRequest(url, method, data, options);
+        }
         if (response?.data?.data?.code >= 400 || response?.data?.code >= 400) {
           return { success: false, data: response.data, status: response?.data?.data?.code >= 400 || response?.data?.code >= 400, error: response.data?.msg || "unknow" };
         }
