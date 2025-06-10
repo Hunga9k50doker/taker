@@ -289,13 +289,6 @@ class ClientAPI {
   }
 
   async completeTask(payload) {
-    //     {
-    //     "taskId": 6,
-    //     "taskEventId": 1,
-    //     "answerList": [
-    //         "C"
-    //     ]
-    // }
     return this.makeRequest(`${this.baseURL}/task/check`, "post", payload);
   }
 
@@ -309,11 +302,12 @@ class ClientAPI {
     if (currentTime >= nextTimestamp || start || userData.firstSign) {
       if (userData.firstSign) {
         this.log(`First sign in, waiting 50s...`, "info");
-        await sleep(50);
+        await sleep(40);
       } else {
         // const isMiningSuccess = await claimRewardMining(this.itemData.privateKey);
         // console.log(isMiningSuccess);
       }
+      await sleep(10);
       this.log(`Starting mining...`, "info");
       const result = await this.startMine();
 
@@ -348,8 +342,10 @@ class ClientAPI {
       this.log("No tasks available", "warning");
       return;
     }
-    const campainsAvaliable = campains.data.filter((item) => ((item.endTime && new Date() < new Date(item.endTime)) || !item.endTime) && item.taskStatus == 1);
 
+    // settings.CAMP_ID.includes(item.id) &&
+
+    const campainsAvaliable = campains.data.filter((item) => ((item.endTime && new Date() < new Date(item.endTime)) || !item.endTime) && item.taskStatus == 1);
     for (const camp of campainsAvaliable) {
       const { id, name: title } = camp;
       this.log(`Getting tasks of camp ${id} | ${title}...`, "info");
@@ -359,27 +355,49 @@ class ClientAPI {
         continue;
       }
       const taskDetailData = taskDetail.data?.taskEvents?.filter((i) => i.completeStatus == 0);
+      let unCompleted = 0;
 
       for (const tasks of taskDetailData) {
-        const { id: taskId, title: taskTitle } = tasks;
+        const { id: taskId, title: taskTitle, options, completeStatus } = tasks;
         const timeSleep = getRandomNumber(settings.DELAY_TASK[0], settings.DELAY_TASK[1]);
         this.log(`Starting task ${taskId} | ${taskTitle} | Delay ${timeSleep}s...`, "info");
         await sleep(timeSleep);
-        const answer = answers[id]?.find((i) => taskId == i.taskEventId) || null;
-        if (!answer) {
-          this.log(`No answer found for task ${taskId}  | ${taskTitle}`, "warning");
-          continue;
-        }
-        const result = await this.completeTask(answer);
-        if (result.success) {
-          this.log(`Task ${taskId} | ${taskTitle} completed successfully | ${JSON.stringify(result)}`, "success");
+        if (options) {
+          let answer = answers[id]?.find((i) => taskId == i.taskEventId) || null;
+          // this.log(`No answer found for task ${taskId}  | ${taskTitle}`, "warning");
+          // continue;
+          for (const option of options) {
+            await sleep(1);
+            if (!answer) {
+              answer = {
+                taskId: id,
+                taskEventId: taskId,
+                answerList: [option.option],
+              };
+            }
+            const result = await this.completeTask(answer);
+            if (result.success && result.data?.result) {
+              this.log(`Task ${taskId} | ${taskTitle} completed successfully | ${JSON.stringify(result)}`, "success");
+              break;
+            }
+          }
         } else {
-          this.log(`Task ${id} | ${taskTitle} failed: ${JSON.stringify(result || {})}`, "error");
+          const result = await this.completeTask({
+            taskId: id,
+            taskEventId: taskId,
+          });
+          if (result.success && result.data?.result) {
+            this.log(`Task ${taskId} | ${taskTitle} completed successfully | ${JSON.stringify(result)}`, "success");
+          } else {
+            this.log(`Task ${id} | ${taskTitle} failed: ${JSON.stringify(result || {})}`, "error");
+            unCompleted++;
+          }
         }
       }
 
+      if (unCompleted > 0) return;
       const claimResult = await this.claimTask(id);
-      if (claimResult.success) {
+      if (claimResult.success && claimResult.data?.success) {
         this.log(`Claimed successfully for camp ${id} | ${title} | ${JSON.stringify(claimResult)}`, "success");
       } else {
         this.log(`Claim failed for camp ${id} | ${title}: ${JSON.stringify(claimResult || {})}`, "error");

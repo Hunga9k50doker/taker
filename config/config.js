@@ -12,7 +12,7 @@ const settings = {
   TYPE_HERO_UPGRADE: process.env.TYPE_HERO_UPGRADE ? JSON.parse(process.env.TYPE_HERO_UPGRADE.replace(/'/g, '"')) : [],
   TYPE_HERO_RESET: process.env.TYPE_HERO_RESET ? JSON.parse(process.env.TYPE_HERO_RESET.replace(/'/g, '"')) : [],
   CODE_GATEWAY: process.env.CODE_GATEWAY ? JSON.parse(process.env.CODE_GATEWAY.replace(/'/g, '"')) : [],
-  DAILY_COMBO: process.env.DAILY_COMBO ? JSON.parse(process.env.DAILY_COMBO.replace(/'/g, '"')) : [],
+  CAMP_ID: process.env.CAMP_ID ? JSON.parse(process.env.CAMP_ID.replace(/'/g, '"')) : [],
   TASKS_ID: process.env.TASKS_ID ? JSON.parse(process.env.TASKS_ID.replace(/'/g, '"')) : [],
 
   AUTO_TASK: process.env.AUTO_TASK ? process.env.AUTO_TASK.toLowerCase() === "true" : false,

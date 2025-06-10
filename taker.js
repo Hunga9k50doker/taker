@@ -12,7 +12,6 @@ const { checkBaseUrl } = require("./utils/checkAPI.js");
 const { headers, headersSowing } = require("./core/header.js");
 const { showBanner } = require("./core/banner.js");
 const localStorage = require("./localStorage.json");
-const { v4: uuidv4 } = require("uuid");
 const { Wallet, ethers } = require("ethers");
 const { solveCaptcha } = require("./utils/captcha.js");
 const { activateMining } = require("./utils/contract.js");
@@ -108,7 +107,7 @@ class ClientAPI {
   }
 
   async log(msg, type = "info") {
-    const accountPrefix = `[Account ${this.accountIndex + 1}][${this.wallet.address}]`;
+    const accountPrefix = `[${this.accountIndex + 1}][${this.wallet.address}]`;
     let ipPrefix = "[Local IP]";
     if (settings.USE_PROXY) {
       ipPrefix = this.proxyIP ? `[${this.proxyIP}]` : "[Unknown IP]";
@@ -314,12 +313,12 @@ class ClientAPI {
     }
     const taskAvaliable = tasks.data.filter((item) => !item.done && !settings.SKIP_TASKS.includes(item.assignmentId));
 
-    let token = await solveCaptcha();
-    if (!token) {
-      this.log("Captcha failed", "error");
-      return;
-    }
     for (const task of taskAvaliable) {
+      let token = await solveCaptcha();
+      if (!token) {
+        this.log("Captcha failed", "error");
+        return;
+      }
       const { assignmentId, title } = task;
       const timeSleep = getRandomNumber(settings.DELAY_TASK[0], settings.DELAY_TASK[1]);
       this.log(`Starting task ${assignmentId} | ${title} | Delay ${timeSleep}s...`, "info");
